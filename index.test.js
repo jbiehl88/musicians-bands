@@ -1,5 +1,5 @@
 const { db } = require("./db")
-const { Band, Musician, Song } = require("./index")
+const { Band, Musician, Song, Manager } = require("./index")
 
 describe("Band, Musician, and Song Models", () => {
 	/**
@@ -80,5 +80,44 @@ describe("Band, Musician, and Song Models", () => {
 		let findSong = await Song.findByPk(1)
 		let deleteSong = await findSong.destroy()
 		expect(deleteSong.title).toBe("All Star")
+	})
+
+	it("check Band/Musician association", async () => {
+		let foundBand = await Band.create({ name: "Blink182", genre: "Rock" })
+		let foundMusician = await Musician.create({ name: "Drummer", instrument: "Drums" })
+		await foundMusician.setBand(foundBand)
+		const bandMusicians = await Band.findOne({
+			where: {
+				name: "Blink182",
+			},
+			include: Musician,
+		})
+		expect(bandMusicians.Musicians[0].name).toBe("Drummer")
+	})
+
+	it("check Song/Band association", async () => {
+		let foundSong = await Song.create({ title: "All the small things", year: 1999, length: 237 })
+		let foundBand = await Band.create({ name: "Blink 182", genre: "Rock" })
+		await foundSong.addBand(foundBand)
+		const bandSongs = await Band.findOne({
+			where: {
+				name: "Blink 182",
+			},
+			include: Song,
+		})
+		expect(bandSongs.Songs[0].title).toBe("All the small things")
+	})
+
+	it("check Band/Manager association", async () => {
+		let band = await Band.create({ name: "Sum41", genre: "Rock" })
+		let manager = await Manager.create({ name: "Steve", email: "Steve@yup.com", salary: 100000, dateHired: "1/12/1999" })
+		await manager.setBand(band)
+		const bandWithManager = await Band.findOne({
+			where: {
+				name: "Sum41",
+			},
+			include: Manager,
+		})
+		expect(bandWithManager.Manager.name).toBe("Steve")
 	})
 })
